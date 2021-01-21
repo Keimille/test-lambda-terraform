@@ -1,3 +1,9 @@
+provider "aws" {
+  version = "~> 2.0"
+
+  region = "us-east-1"
+}
+
 resource "aws_sns_topic" "test" {
   name            = "terraform_test"
   delivery_policy = <<EOF
@@ -38,21 +44,19 @@ resource "aws_sqs_queue" "test_example_queue" {
 }
 
 resource "aws_sqs_queue" "terraform_queue_deadletter" {
-    name = "terraform_queue_deadletter"
+  name = "terraform_queue_deadletter"
 }
 
 resource "aws_sns_topic_subscription" "test_example_queue_target" {
   topic_arn = aws_sns_topic.test.arn
-  protocol  = "sns"
+  protocol  = "sqs"
   endpoint  = aws_sqs_queue.test_example_queue.arn
 }
 
-resource "aws_sqs_queue" "q" {
-  name = "examplequeue"
-}
+
 
 resource "aws_sqs_queue_policy" "test" {
-  queue_url = aws_sqs_queue.q.id
+  queue_url = aws_sqs_queue.test_example_queue.id
 
   policy = <<POLICY
 {
@@ -64,10 +68,10 @@ resource "aws_sqs_queue_policy" "test" {
       "Effect": "Allow",
       "Principal": "*",
       "Action": "sqs:SendMessage",
-      "Resource": "${aws_sqs_queue.q.arn}",
+      "Resource": "aws_sqs_queue.test_example_queue.arn",
       "Condition": {
         "ArnEquals": {
-          "aws:SourceArn": "${aws_sns_topic.example.arn}"
+          "aws:SourceArn": "aws_sns_topic.test.arn"
         }
       }
     }
